@@ -4,7 +4,7 @@
  Author      : Andraz Vrhovec
  Version     :
  Copyright   : Use it, abuse it!
- Description : Hello World in C, Ansi-style
+ Description : Gaussian filter
  ============================================================================
  */
 
@@ -16,10 +16,10 @@
 #include <malloc.h>
 #include <string.h>
 #include <math.h>
-#include <xmmintrin.h>
+#include <pmmintrin.h>
 #include <valgrind/callgrind.h>
 
-#define EXTENSION_BORDER 8
+#define EXTENSION_BORDER 4
 #define FILTER_SIZE 7
 
 #define PROFILE_RDTSC;
@@ -68,7 +68,9 @@ int main(int argc, char **argv) {
 	float **gauss = izp_gaussianMatrix(FILTER_SIZE, FILTER_SIZE, 3.0f);
 	float **gaussRow = izp_gaussianMatrix(1, FILTER_SIZE, 3.0f);
 
-//	izp_printMatrix(gaussRow, 1, FILTER_SIZE);
+	izp_printMatrix(gaussRow, 1, FILTER_SIZE);
+
+	printf("Naslovi so %u %u\n", ((unsigned long)&extendedImage[18][0] & 0xF), ((unsigned long)&extendedImage[13][-4] & 0xF));
 
 #ifdef PROFILE_RDTSC
 	unsigned long long start = rdtsc();
@@ -82,8 +84,8 @@ int main(int argc, char **argv) {
 
 	free(extendedImage[0]);
 	free(extendedImage);
-	izp_convolve1D(transposed, gaussRow[0], cols, rows, FILTER_SIZE);
-	extendedImage = izp_transpose(transposed, cols + 16, rows + 16);
+	izp_convolve1Dsse(transposed, gaussRow[0], rows, cols, FILTER_SIZE);
+	extendedImage = izp_transpose(transposed, rows + EXTENSION_BORDER*2, cols + EXTENSION_BORDER*2);
 
 #ifdef PROFILE_RDTSC
 	CALLGRIND_STOP_INSTRUMENTATION;
@@ -95,7 +97,7 @@ int main(int argc, char **argv) {
 	// write it
 	FILE *fpOut = fopen("output.pgm", "wb");
 	if (fpOut != NULL) {
-		pgm_writepgm(fpOut, (gray**) extendedImage, cols + 16, rows + 16,
+		pgm_writepgm(fpOut, (gray**) extendedImage, cols + EXTENSION_BORDER*2, rows + EXTENSION_BORDER*2,
 				maxval, 0);
 	}
 
@@ -208,22 +210,18 @@ void izp_convolve1D(unsigned int **image, float *vec, const int cols,
 void izp_convolve1Dsse(unsigned int **image, float *vec, const int cols,
 		const int rows, const int size) {
 
-	register float tmp = 0.0f;
+	__m128 sse_vec = _mm_load_ps(&(vec[0]));
+	__m128 sse_vec2 = _mm_load_ps(&(vec[4]));
 
 	for (int i = EXTENSION_BORDER; i < rows + EXTENSION_BORDER; ++i) {
 		for (int j = EXTENSION_BORDER; j < cols + EXTENSION_BORDER; ++j) {
 
-			tmp = 0.0f;
+			__m128 a = _mm_mul_ps(_mm_load_ps(&image[i][j-4]), sse_vec);
+			__m128 b = _mm_mul_ps(_mm_load_ps(&image[i][j]), sse_vec2);
+			__m128 c = _mm_hadd_ps(a, b);
+			__m128 total = _mm_hadd_ps(_mm_hadd_ps(c, c), _mm_hadd_ps(c, c));
+			_mm_store_ss((float*)&(image[i][j]), total);
 
-			tmp += image[i][j - 3] * vec[0];
-			tmp += image[i][j - 2] * vec[1];
-			tmp += image[i][j - 1] * vec[2];
-			tmp += image[i][j] * vec[3];
-			tmp += image[i][j + 1] * vec[4];
-			tmp += image[i][j + 2] * vec[5];
-			tmp += image[i][j + 3] * vec[6];
-
-			image[i][j] = tmp;
 		}
 	}
 }
