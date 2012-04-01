@@ -114,11 +114,11 @@ int main(int argc, char **argv) {
 
 	float** transposed = izp_transpose(extendedImage, newCols,
 			newRows);
-
-	free(extendedImage[0]);
-	free(extendedImage);
-	izp_convolve1Dsse(transposed, gaussRow[0], rows, cols, FILTER_SIZE);
-	extendedImage = izp_transpose(transposed, rows + EXTENSION_BORDER*2, cols + EXTENSION_BORDER*2);
+//
+//	free(extendedImage[0]);
+//	free(extendedImage);
+//	izp_convolve1Dsse(transposed, gaussRow[0], rows, cols, FILTER_SIZE);
+//	extendedImage = izp_transpose(transposed, rows + EXTENSION_BORDER*2, cols + EXTENSION_BORDER*2);
 #else
 
 #ifdef USE_2D
@@ -282,85 +282,71 @@ void izp_convolve1Dsse(float **image, float *vec, const int cols,
 	coef[13] = 0.0f;
 	coef[14] = 0.0f;
 
-	register __m128 vec0_lo = _mm_loadu_ps(&coef[3]);
-	register __m128 vec0_mi = _mm_loadu_ps(&coef[7]);
+	const register __m128 vec0_lo = _mm_loadu_ps(&coef[3]);
+	const register __m128 vec0_mi = _mm_loadu_ps(&coef[7]);
 
-	register __m128 vec1_lo = _mm_loadu_ps(&coef[2]);
-	register __m128 vec1_mi = _mm_loadu_ps(&coef[6]);
-	register __m128 vec1_hi = _mm_loadu_ps(&coef[10]);
+	const register __m128 vec1_lo = _mm_loadu_ps(&coef[2]);
+	const register __m128 vec1_mi = _mm_loadu_ps(&coef[6]);
+	const register __m128 vec1_hi = _mm_loadu_ps(&coef[10]);
 
-	register __m128 vec2_lo = _mm_loadu_ps(&coef[1]);
-	register __m128 vec2_mi = _mm_loadu_ps(&coef[5]);
-	register __m128 vec2_hi = _mm_loadu_ps(&coef[9]);
+	const register __m128 vec2_lo = _mm_loadu_ps(&coef[1]);
+	const register __m128 vec2_mi = _mm_loadu_ps(&coef[5]);
+	const register __m128 vec2_hi = _mm_loadu_ps(&coef[9]);
 
-	register __m128 vec3_mi = _mm_loadu_ps(&coef[4]);
-	register __m128 vec3_hi = _mm_loadu_ps(&coef[8]);
+	const register __m128 vec3_mi = _mm_loadu_ps(&coef[4]);
+	const register __m128 vec3_hi = _mm_loadu_ps(&coef[8]);
+
+	register __m128 x;
+	register __m128 y;
+	register __m128 z;
+	register __m128 tmp;
 
 	__m128 a;
 	__m128 b;
 	__m128 c;
 
-	__m128 x;
-	__m128 y;
-	__m128 z;
-	__m128 tmp;
-
 	for (int i = EXTENSION_BORDER; i < rows + EXTENSION_BORDER; i++) {
 		for (int j = EXTENSION_BORDER; j < cols + EXTENSION_BORDER; j = j + 4) {
 
-			a = _mm_load_ps(&image[i][j - 4]);
-			b = _mm_load_ps(&image[i][j]);
-
 			// 1st pass with vec0
 
-			x = _mm_mul_ps(a, vec0_lo);
-			y = _mm_mul_ps(b, vec0_mi);
+			x = _mm_mul_ps(_mm_load_ps(&image[i][j - 4]), vec0_lo);
+			y = _mm_mul_ps(_mm_load_ps(&image[i][j]), vec0_mi);
 
 			tmp = _mm_hadd_ps(x, y);
-			_mm_store_ss(&image[i][j], _mm_hadd_ps(tmp, tmp));
+			//_mm_store_ss(&image[i][j], _mm_hadd_ps(tmp, tmp));
 
 			// end of 1st pass
 
-			a = _mm_load_ps(&image[i][j - 4]);
-			b = _mm_load_ps(&image[i][j]);
-			c = _mm_load_ps(&image[i][j + 4]);
-
 			// 2nd pass
 
-			x = _mm_mul_ps(a, vec1_lo);
-			y = _mm_mul_ps(b, vec1_mi);
-			z = _mm_mul_ps(c, vec1_hi);
+			x = _mm_mul_ps(_mm_load_ps(&image[i][j - 4]), vec1_lo);
+			y = _mm_mul_ps(_mm_load_ps(&image[i][j]), vec1_mi);
+			z = _mm_mul_ps(_mm_load_ps(&image[i][j + 4]), vec1_hi);
 
 			tmp = _mm_hadd_ps(_mm_hadd_ps(x, y), z);
-			_mm_store_ss(&image[i][j+1], _mm_hadd_ps(tmp, tmp));
+//			_mm_store_ss(&image[i][j+1], _mm_hadd_ps(tmp, tmp));
 
 			// end of 2nd pass
 
-			a = _mm_load_ps(&image[i][j - 4]);
-			b = _mm_load_ps(&image[i][j]);
-			c = _mm_load_ps(&image[i][j + 4]);
-
 			// 3rd pass
 
-			x = _mm_mul_ps(a, vec2_lo);
-			y = _mm_mul_ps(b, vec2_mi);
-			z = _mm_mul_ps(c, vec2_hi);
+			x = _mm_mul_ps(_mm_load_ps(&image[i][j - 4]), vec2_lo);
+			y = _mm_mul_ps(_mm_load_ps(&image[i][j]), vec2_mi);
+			z = _mm_mul_ps(_mm_load_ps(&image[i][j + 4]), vec2_hi);
 
 			tmp = _mm_hadd_ps(_mm_hadd_ps(x, y), z);
-			_mm_store_ss(&image[i][j+2], _mm_hadd_ps(tmp, tmp));
+//			_mm_store_ss(&image[i][j+2], _mm_hadd_ps(tmp, tmp));
 
 			// end of 3rd pass
 
-			b = _mm_load_ps(&image[i][j]);
-			c = _mm_load_ps(&image[i][j + 4]);
-
 			// 4th pass
 
-			y = _mm_mul_ps(b, vec3_mi);
-			z = _mm_mul_ps(c, vec3_hi);
+			y = _mm_mul_ps(_mm_load_ps(&image[i][j]), vec3_mi);
+			z = _mm_mul_ps(_mm_load_ps(&image[i][j + 4]), vec3_hi);
 
 			tmp = _mm_hadd_ps(y, z);
-			_mm_store_ss(&image[i][j], _mm_hadd_ps(tmp, tmp));
+//			_mm_store_ss(&image[i][j+3], _mm_hadd_ps(tmp, tmp));
 
 			// end of 4th pass
 
@@ -411,7 +397,7 @@ float** izp_transpose(float **image, const int cols, const int rows) {
 	float **extImage = (float **) izp_allocarray(rows, cols, sizeof(float));
 
 	// make it grey
-//	memset(extImage[0], 0, rows * cols * sizeof(float));
+	memset(extImage[0], 0, rows * cols * sizeof(float));
 
 // copy centred
 	for (int i = 0; i < rows; ++i) {
@@ -426,7 +412,7 @@ float** izp_transpose(float **image, const int cols, const int rows) {
 unsigned int** izp_toUintArray(float **image, const int cols, const int rows) {
 
 	// allocate big cosy array :D
-	unsigned int **extImage = (unsigned int **) izp_allocarray(rows, cols,
+	unsigned int **extImage = (unsigned int **) izp_allocarray(cols, rows,
 			sizeof(unsigned int));
 
 	// copy centred
@@ -456,7 +442,6 @@ void** izp_allocarray(const int width, const int height, const int size) {
 	}
 }
 
-#ifdef USE_SSE
 float ** izp_gaussianMatrix(const int n, const int m, const float sigma) {
 
 	float ** g = (float **) izp_allocarray(m, n, sizeof(float));
@@ -484,19 +469,17 @@ float ** izp_gaussianMatrix(const int n, const int m, const float sigma) {
 
 	return g;
 }
-#else
-float ** izp_gaussianMatrix(const int n, const int m, const float sigma) {
-	float ** g = (float **) izp_allocarray(m, n, sizeof(float));
-	g[0][0] = 0.106289f;
-	g[0][1] = 0.140321f;
-	g[0][2] = 0.165770f;
-	g[0][3] = 0.175240f;
-	g[0][4] = 0.165770f;
-	g[0][5] = 0.140321f;
-	g[0][6] = 0.106289f;
-	return g;
-}
-#endif
+//float ** izp_gaussianMatrix(const int n, const int m, const float sigma) {
+//	float ** g = (float **) izp_allocarray(m, n, sizeof(float));
+//	g[0][0] = 0.106289f;
+//	g[0][1] = 0.140321f;
+//	g[0][2] = 0.165770f;
+//	g[0][3] = 0.175240f;
+//	g[0][4] = 0.165770f;
+//	g[0][5] = 0.140321f;
+//	g[0][6] = 0.106289f;
+//	return g;
+//}
 
 void izp_printMatrix(float** mat, const int n, const int m) {
 	for (int i = 0; i < n; i++) {

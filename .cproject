@@ -258,7 +258,7 @@
 								<option id="gnu.c.compiler.exe.release.option.debugging.level.844766773" name="Debug Level" superClass="gnu.c.compiler.exe.release.option.debugging.level" value="gnu.c.debugging.level.none" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.include.paths.1985074414" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath"/>
 								<option id="gnu.c.compiler.option.misc.other.1949683594" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-c -fmessage-length=0 -std=c99" valueType="string"/>
-								<option id="gnu.c.compiler.option.optimization.flags.2131893206" name="Other optimization flags" superClass="gnu.c.compiler.option.optimization.flags" value="-mno-sse" valueType="string"/>
+								<option id="gnu.c.compiler.option.optimization.flags.2131893206" name="Other optimization flags" superClass="gnu.c.compiler.option.optimization.flags" value="-mfpmath=387" valueType="string"/>
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.260912048" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="USE_2D"/>
 								</option>
