@@ -328,6 +328,9 @@ void izp_convolve1Dsse(float** restrict image, float* restrict vec,
 	__m128 b;
 	__m128 c;
 
+	__m128 ZOKI;
+	__m128 BOKI;
+
 	for (int i = EXTENSION_BORDER; i < rows + EXTENSION_BORDER; i++) {
 		for (int j = EXTENSION_BORDER; j < cols + EXTENSION_BORDER; j = j + 4) {
 
@@ -340,8 +343,9 @@ void izp_convolve1Dsse(float** restrict image, float* restrict vec,
 			y = _mm_mul_ps(b, vec0_mi);
 
 			tmp0 = _mm_hadd_ps(x, y);
-			tmp0 = _mm_hadd_ps(_mm_hadd_ps(tmp0, tmp0), tmp0);
-			_mm_store_ss(&image[i][j], tmp0);
+
+//			tmp0 = _mm_hadd_ps(_mm_hadd_ps(tmp0, tmp0), tmp0);
+//			_mm_store_ss(&image[i][j], tmp0);
 			// end of 1st pass
 
 			// 2nd pass
@@ -350,8 +354,12 @@ void izp_convolve1Dsse(float** restrict image, float* restrict vec,
 			z = _mm_mul_ps(c, vec1_hi);
 
 			tmp1 = _mm_hadd_ps(_mm_hadd_ps(x, y), z);
-			tmp1 = _mm_hadd_ps(_mm_hadd_ps(tmp1, tmp1), tmp1);
-			_mm_store_ss(&image[i][j + 1], tmp1);
+
+			// ZOKI[0] and ZOKI[1] is value for image[i][j]
+			// ZOKI[2] and ZOKI[3] is value for image[i][j+1]
+			ZOKI = _mm_hadd_ps(_mm_hadd_ps(tmp0, tmp0), _mm_hadd_ps(tmp1, tmp1));
+//			tmp1 = _mm_hadd_ps(_mm_hadd_ps(tmp1, tmp1), tmp1);
+//			_mm_store_ss(&image[i][j + 1], tmp1);
 			// end of 2nd pass
 
 			// 3rd pass
@@ -360,8 +368,8 @@ void izp_convolve1Dsse(float** restrict image, float* restrict vec,
 			z = _mm_mul_ps(c, vec2_hi);
 
 			tmp2 = _mm_hadd_ps(_mm_hadd_ps(x, y), z);
-			tmp2 = _mm_hadd_ps(_mm_hadd_ps(tmp2, tmp2), tmp2);
-			_mm_store_ss(&image[i][j + 2], tmp2);
+//			tmp2 = _mm_hadd_ps(_mm_hadd_ps(tmp2, tmp2), tmp2);
+//			_mm_store_ss(&image[i][j + 2], tmp2);
 			// end of 3rd pass
 
 			// 4th pass
@@ -369,8 +377,11 @@ void izp_convolve1Dsse(float** restrict image, float* restrict vec,
 			z = _mm_mul_ps(c, vec3_hi);
 
 			tmp3 = _mm_hadd_ps(y, z);
-			tmp3 = _mm_hadd_ps(_mm_hadd_ps(tmp3, tmp3), tmp3);
-			_mm_store_ss(&image[i][j + 3], tmp3);
+//			tmp3 = _mm_hadd_ps(_mm_hadd_ps(tmp3, tmp3), tmp3);
+//			_mm_store_ss(&image[i][j + 3], tmp3);
+			BOKI = _mm_hadd_ps(_mm_hadd_ps(tmp2, tmp2), _mm_hadd_ps(tmp3, tmp3));
+
+			_mm_stream_ps(&image[i][j], _mm_shuffle_ps(ZOKI, BOKI, 0xCC));
 			// end of 4th pass
 
 		}
