@@ -1,0 +1,47 @@
+
+;; Function main (main)
+
+
+
+main
+
+Dataflow summary:
+;;  invalidated by call 	 0 [ax] 1 [dx] 2 [cx] 4 [si] 5 [di] 8 [st] 9 [st(1)] 10 [st(2)] 11 [st(3)] 12 [st(4)] 13 [st(5)] 14 [st(6)] 15 [st(7)] 17 [flags] 18 [fpsr] 19 [fpcr] 21 [xmm0] 22 [xmm1] 23 [xmm2] 24 [xmm3] 25 [xmm4] 26 [xmm5] 27 [xmm6] 28 [xmm7] 29 [mm0] 30 [mm1] 31 [mm2] 32 [mm3] 33 [mm4] 34 [mm5] 35 [mm6] 36 [mm7] 37 [r8] 38 [r9] 39 [r10] 40 [r11] 45 [xmm8] 46 [xmm9] 47 [xmm10] 48 [xmm11] 49 [xmm12] 50 [xmm13] 51 [xmm14] 52 [xmm15]
+;;  hardware regs used 	
+;;  regular block artificial uses 	 6 [bp] 7 [sp] 16 [argp] 20 [frame]
+;;  eh block artificial uses 	 6 [bp] 7 [sp] 16 [argp] 20 [frame]
+;;  entry block defs 	 0 [ax] 1 [dx] 2 [cx] 4 [si] 5 [di] 6 [bp] 7 [sp] 16 [argp] 20 [frame] 21 [xmm0] 22 [xmm1] 23 [xmm2] 24 [xmm3] 25 [xmm4] 26 [xmm5] 27 [xmm6] 28 [xmm7] 37 [r8] 38 [r9]
+;;  exit block uses 	 0 [ax] 6 [bp] 7 [sp] 20 [frame]
+;;  regs ever live 	 0[ax]
+;;  ref usage 	r0={2d,2u} r1={1d} r2={1d} r4={1d} r5={1d} r6={1d,2u} r7={1d,2u} r16={1d,1u} r20={1d,2u} r21={1d} r22={1d} r23={1d} r24={1d} r25={1d} r26={1d} r27={1d} r28={1d} r37={1d} r38={1d} r59={1d,1u} r60={1d,1u} 
+;;    total ref usage 33{22d,11u,0e} in 4{4 regular + 0 call} insns.
+(note 1 0 3 NOTE_INSN_DELETED)
+
+;; Start of basic block ( 0) -> 2
+;; bb 2 artificial_defs: { }
+;; bb 2 artificial_uses: { u-1(6){ }u-1(7){ }u-1(16){ }u-1(20){ }}
+
+;; Pred edge  ENTRY (fallthru)
+(note 3 1 2 2 [bb 2] NOTE_INSN_BASIC_BLOCK)
+
+(note 2 3 5 2 NOTE_INSN_FUNCTION_BEG)
+
+(insn 5 2 6 2 (set (reg:SI 59 [ D.2972 ])
+        (const_int 0 [0])) /home/az/Downloads/glibc-2.13/wctype/bug-wctypeh.c:9 64 {*movsi_internal}
+     (nil))
+
+(insn 6 5 10 2 (set (reg:SI 60 [ <retval> ])
+        (reg:SI 59 [ D.2972 ])) /home/az/Downloads/glibc-2.13/wctype/bug-wctypeh.c:9 64 {*movsi_internal}
+     (nil))
+
+(insn 10 6 13 2 (set (reg/i:SI 0 ax)
+        (reg:SI 60 [ <retval> ])) /home/az/Downloads/glibc-2.13/wctype/bug-wctypeh.c:10 64 {*movsi_internal}
+     (nil))
+
+(insn 13 10 0 2 (use (reg/i:SI 0 ax)) /home/az/Downloads/glibc-2.13/wctype/bug-wctypeh.c:10 -1
+     (nil))
+;; End of basic block 2 -> ( 1)
+
+
+;; Succ edge  EXIT [100.0%]  (fallthru)
+

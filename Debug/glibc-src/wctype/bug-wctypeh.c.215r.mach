@@ -1,0 +1,48 @@
+
+;; Function main (main)
+
+(note 1 0 3 NOTE_INSN_DELETED)
+
+(note 3 1 17 2 [bb 2] NOTE_INSN_BASIC_BLOCK)
+
+(insn/f 17 3 18 2 (set (mem:DI (pre_dec:DI (reg/f:DI 7 sp)) [0 S8 A8])
+        (reg/f:DI 6 bp)) /home/az/Downloads/glibc-2.13/wctype/bug-wctypeh.c:8 -1
+     (nil))
+
+(insn/f 18 17 19 2 (set (reg/f:DI 6 bp)
+        (reg/f:DI 7 sp)) /home/az/Downloads/glibc-2.13/wctype/bug-wctypeh.c:8 -1
+     (nil))
+
+(insn 19 18 20 2 (use (reg/f:DI 6 bp)) /home/az/Downloads/glibc-2.13/wctype/bug-wctypeh.c:8 -1
+     (nil))
+
+(note 20 19 21 2 NOTE_INSN_PROLOGUE_END)
+
+(insn 21 20 2 2 (unspec_volatile [
+            (const_int 0 [0])
+        ] UNSPECV_BLOCKAGE) /home/az/Downloads/glibc-2.13/wctype/bug-wctypeh.c:8 -1
+     (nil))
+
+(note 2 21 5 2 NOTE_INSN_FUNCTION_BEG)
+
+(insn 5 2 13 2 (set (reg:SI 0 ax [orig:59 D.2972 ] [59])
+        (const_int 0 [0])) /home/az/Downloads/glibc-2.13/wctype/bug-wctypeh.c:9 64 {*movsi_internal}
+     (nil))
+
+(insn 13 5 22 2 (use (reg/i:SI 0 ax)) /home/az/Downloads/glibc-2.13/wctype/bug-wctypeh.c:10 -1
+     (nil))
+
+(note 22 13 23 2 NOTE_INSN_EPILOGUE_BEG)
+
+(insn/f 23 22 24 2 (set (reg/f:DI 6 bp)
+        (mem:DI (post_inc:DI (reg/f:DI 7 sp)) [0 S8 A8])) /home/az/Downloads/glibc-2.13/wctype/bug-wctypeh.c:10 -1
+     (expr_list:REG_CFA_DEF_CFA (plus:DI (reg/f:DI 7 sp)
+            (const_int 8 [0x8]))
+        (nil)))
+
+(jump_insn 24 23 25 2 (return) /home/az/Downloads/glibc-2.13/wctype/bug-wctypeh.c:10 -1
+     (nil))
+
+(barrier 25 24 16)
+
+(note 16 25 0 NOTE_INSN_DELETED)

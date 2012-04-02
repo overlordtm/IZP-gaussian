@@ -1,0 +1,56 @@
+
+;; Function VALGRIND_PRINTF (VALGRIND_PRINTF)
+
+deleting insn with uid = 75.
+
+;; Function VALGRIND_PRINTF_BACKTRACE (VALGRIND_PRINTF_BACKTRACE)
+
+deleting insn with uid = 75.
+
+;; Function main (main)
+
+deleting insn with uid = 286.
+
+;; Function izp_convolve2D (izp_convolve2D)
+
+deleting insn with uid = 1075.
+
+;; Function izp_convolve1D (izp_convolve1D)
+
+deleting insn with uid = 197.
+
+;; Function izp_convolve2Dsse (izp_convolve2Dsse)
+
+deleting insn with uid = 1183.
+
+;; Function izp_convolve1Dsse (izp_convolve1Dsse)
+
+deleting insn with uid = 561.
+
+;; Function izp_extendImage (izp_extendImage)
+
+deleting insn with uid = 162.
+
+;; Function izp_transpose (izp_transpose)
+
+deleting insn with uid = 90.
+
+;; Function izp_toUintArray (izp_toUintArray)
+
+deleting insn with uid = 92.
+
+;; Function izp_allocarray (izp_allocarray)
+
+deleting insn with uid = 103.
+
+;; Function izp_gaussianMatrix (izp_gaussianMatrix)
+
+deleting insn with uid = 199.
+
+;; Function izp_printMatrix (izp_printMatrix)
+
+deleting insn with uid = 73.
+
+;; Function rdtsc (rdtsc)
+
+deleting insn with uid = 40.

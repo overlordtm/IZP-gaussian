@@ -1,0 +1,65 @@
+
+;; Function main (main)
+
+(note 1 0 3 NOTE_INSN_DELETED)
+
+;; Start of basic block ( 0) -> 2
+;; Pred edge  ENTRY (fallthru)
+(note 3 1 2 2 [bb 2] NOTE_INSN_BASIC_BLOCK)
+
+(note 2 3 4 2 NOTE_INSN_FUNCTION_BEG)
+;; End of basic block 2 -> ( 3)
+
+;; Succ edge  3 [100.0%]  (fallthru)
+
+;; Start of basic block ( 2) -> 3
+;; Pred edge  2 [100.0%]  (fallthru)
+(note 4 2 5 3 [bb 3] NOTE_INSN_BASIC_BLOCK)
+
+(insn 5 4 6 3 (set (reg:SI 59 [ D.2972 ])
+        (const_int 0 [0])) /home/az/Downloads/glibc-2.13/wctype/bug-wctypeh.c:9 -1
+     (nil))
+
+(insn 6 5 7 3 (set (reg:SI 60 [ <retval> ])
+        (reg:SI 59 [ D.2972 ])) /home/az/Downloads/glibc-2.13/wctype/bug-wctypeh.c:9 -1
+     (nil))
+
+(jump_insn 7 6 8 3 (set (pc)
+        (label_ref 9)) /home/az/Downloads/glibc-2.13/wctype/bug-wctypeh.c:9 -1
+     (nil)
+ -> 9)
+;; End of basic block 3 -> ( 5)
+
+;; Succ edge  5
+
+(barrier 8 7 14)
+
+;; Start of basic block () -> 4
+(note 14 8 11 4 [bb 4] NOTE_INSN_BASIC_BLOCK)
+
+(insn 11 14 12 4 (clobber (reg/i:SI 0 ax)) /home/az/Downloads/glibc-2.13/wctype/bug-wctypeh.c:10 -1
+     (nil))
+
+(insn 12 11 9 4 (clobber (reg:SI 60 [ <retval> ])) /home/az/Downloads/glibc-2.13/wctype/bug-wctypeh.c:10 -1
+     (nil))
+;; End of basic block 4 -> ( 5)
+
+;; Succ edge  5 (fallthru)
+
+;; Start of basic block ( 3 4) -> 5
+;; Pred edge  3
+;; Pred edge  4 (fallthru)
+(code_label 9 12 15 5 1 "" [1 uses])
+
+(note 15 9 10 5 [bb 5] NOTE_INSN_BASIC_BLOCK)
+
+(insn 10 15 13 5 (set (reg/i:SI 0 ax)
+        (reg:SI 60 [ <retval> ])) /home/az/Downloads/glibc-2.13/wctype/bug-wctypeh.c:10 -1
+     (nil))
+
+(insn 13 10 0 5 (use (reg/i:SI 0 ax)) /home/az/Downloads/glibc-2.13/wctype/bug-wctypeh.c:10 -1
+     (nil))
+;; End of basic block 5 -> ( 1)
+
+;; Succ edge  EXIT [100.0%]  (fallthru)
+
