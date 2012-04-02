@@ -381,7 +381,7 @@ void izp_convolve1Dsse(float** restrict image, float* restrict vec,
 //			_mm_store_ss(&image[i][j + 3], tmp3);
 			BOKI = _mm_hadd_ps(_mm_hadd_ps(tmp2, tmp2), _mm_hadd_ps(tmp3, tmp3));
 
-			_mm_stream_ps(&image[i][j], _mm_shuffle_ps(ZOKI, BOKI, 0xCC));
+			_mm_store_ps(&image[i][j], _mm_shuffle_ps(ZOKI, BOKI, 0xCC));
 			// end of 4th pass
 
 		}
