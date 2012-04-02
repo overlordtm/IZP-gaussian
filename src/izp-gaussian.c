@@ -142,7 +142,10 @@ int main(int argc, char **argv) {
 	izp_convolve2D(extendedImage, gauss, cols, rows, FILTER_SIZE);
 #else
 	printf("Using 1D non-SSE\n");
-	izp_convolve1D(extendedImage, gaussRow[0], cols, rows, FILTER_SIZE);
+
+	float row[7] = {0.10629f,   0.14032f,   0.16577f,   0.17524f,   0.16577f,   0.14032f,   0.10629f};
+
+	izp_convolve1D(extendedImage, row, cols, rows, FILTER_SIZE);
 
 	float** transposed = izp_transpose(extendedImage, newCols, newRows);
 	// free old buffers
@@ -157,9 +160,8 @@ int main(int argc, char **argv) {
 
 #ifdef PROFILE_RDTSC
 	unsigned long long cycles = rdtsc() - start;
-	printf(
-			"%lld cycles/pixel \t %f seconds/image.\n",
-			cycles / (rows * cols), (float) cycles / (2 * 10E9));
+	printf("%lld cycles/pixel \t %f seconds/image.\n", cycles / (rows * cols),
+			(float) cycles / (2 * 10E9));
 #endif
 
 	// convert image back to unsigned int
@@ -288,13 +290,13 @@ inline void izp_convolve2Dsse(float** restrict image, float** restrict mat,
 //	how not to implement SSE :D
 
 	float m[8][8];
-	memcpy(&m[0][0], &mat[0][0], sizeof(float) * 4);
-	memcpy(&m[1][0], &mat[1][0], sizeof(float) * 4);
-	memcpy(&m[2][0], &mat[2][0], sizeof(float) * 4);
-	memcpy(&m[3][0], &mat[3][0], sizeof(float) * 4);
-	memcpy(&m[4][0], &mat[4][0], sizeof(float) * 4);
-	memcpy(&m[5][0], &mat[5][0], sizeof(float) * 4);
-	memcpy(&m[6][0], &mat[6][0], sizeof(float) * 4);
+	memcpy(&m[0][0], &mat[0][0], sizeof(float) * 7);
+	memcpy(&m[1][0], &mat[1][0], sizeof(float) * 7);
+	memcpy(&m[2][0], &mat[2][0], sizeof(float) * 7);
+	memcpy(&m[3][0], &mat[3][0], sizeof(float) * 7);
+	memcpy(&m[4][0], &mat[4][0], sizeof(float) * 7);
+	memcpy(&m[5][0], &mat[5][0], sizeof(float) * 7);
+	memcpy(&m[6][0], &mat[6][0], sizeof(float) * 7);
 
 	__m128 m00 = _mm_load_ps(&m[0][0]);
 	__m128 m01 = _mm_load_ps(&m[0][4]);
@@ -321,13 +323,13 @@ inline void izp_convolve2Dsse(float** restrict image, float** restrict mat,
 	float tmp[4];
 
 	for (int i = EXTENSION_BORDER; i < rows + EXTENSION_BORDER; ++i) {
-		for (int j = EXTENSION_BORDER; j < cols + EXTENSION_BORDER; j = j + 4) {
+		for (int j = EXTENSION_BORDER; j < cols + EXTENSION_BORDER; j = j+1) {
 
 			x = 0.0f;
 
 			// 1st row
-			__m128 a = _mm_load_ps(&image[i - 3][j - 4]);
-			__m128 b = _mm_load_ps(&image[i - 3][j]);
+			__m128 a = _mm_loadu_ps(&image[i - 3][j - 4]);
+			__m128 b = _mm_loadu_ps(&image[i - 3][j]);
 
 			_mm_store_ps(&tmp[0], _mm_mul_ps(a, m00));
 			x += tmp[0];
@@ -341,8 +343,8 @@ inline void izp_convolve2Dsse(float** restrict image, float** restrict mat,
 			x += tmp[3];
 
 			// 2nd row
-			__m128 c = _mm_load_ps(&image[i - 2][j - 4]);
-			__m128 d = _mm_load_ps(&image[i - 2][j]);
+			__m128 c = _mm_loadu_ps(&image[i - 2][j - 4]);
+			__m128 d = _mm_loadu_ps(&image[i - 2][j]);
 
 			_mm_store_ps(&tmp[0], _mm_mul_ps(c, m10));
 			x += tmp[0];
@@ -356,8 +358,8 @@ inline void izp_convolve2Dsse(float** restrict image, float** restrict mat,
 			x += tmp[3];
 
 			// 3rd row
-			__m128 e = _mm_load_ps(&image[i - 1][j - 4]);
-			__m128 f = _mm_load_ps(&image[i - 1][j]);
+			__m128 e = _mm_loadu_ps(&image[i - 1][j - 4]);
+			__m128 f = _mm_loadu_ps(&image[i - 1][j]);
 
 			_mm_store_ps(&tmp[0], _mm_mul_ps(e, m20));
 			x += tmp[0];
@@ -371,8 +373,8 @@ inline void izp_convolve2Dsse(float** restrict image, float** restrict mat,
 			x += tmp[3];
 
 			// 4th row
-			__m128 g = _mm_load_ps(&image[i][j - 4]);
-			__m128 h = _mm_load_ps(&image[i][j]);
+			__m128 g = _mm_loadu_ps(&image[i][j - 4]);
+			__m128 h = _mm_loadu_ps(&image[i][j]);
 
 			_mm_store_ps(&tmp[0], _mm_mul_ps(g, m30));
 			x += tmp[0];
@@ -386,8 +388,8 @@ inline void izp_convolve2Dsse(float** restrict image, float** restrict mat,
 			x += tmp[3];
 
 			// 5th row
-			__m128 ii = _mm_load_ps(&image[i + 1][j - 4]);
-			__m128 jj = _mm_load_ps(&image[i + 1][j]);
+			__m128 ii = _mm_loadu_ps(&image[i + 1][j - 4]);
+			__m128 jj = _mm_loadu_ps(&image[i + 1][j]);
 
 			_mm_store_ps(&tmp[0], _mm_mul_ps(ii, m40));
 			x += tmp[0];
@@ -401,8 +403,8 @@ inline void izp_convolve2Dsse(float** restrict image, float** restrict mat,
 			x += tmp[3];
 
 			// 6th row
-			__m128 k = _mm_load_ps(&image[i + 2][j - 4]);
-			__m128 l = _mm_load_ps(&image[i + 2][j]);
+			__m128 k = _mm_loadu_ps(&image[i + 2][j - 4]);
+			__m128 l = _mm_loadu_ps(&image[i + 2][j]);
 
 			_mm_store_ps(&tmp[0], _mm_mul_ps(k, m50));
 			x += tmp[0];
@@ -416,8 +418,8 @@ inline void izp_convolve2Dsse(float** restrict image, float** restrict mat,
 			x += tmp[3];
 
 			// 7th row
-			__m128 mm = _mm_load_ps(&image[i + 3][j - 4]);
-			__m128 nn = _mm_load_ps(&image[i + 3][j]);
+			__m128 mm = _mm_loadu_ps(&image[i + 3][j - 4]);
+			__m128 nn = _mm_loadu_ps(&image[i + 3][j]);
 
 			_mm_store_ps(&tmp[0], _mm_mul_ps(mm, m60));
 			x += tmp[0];
@@ -474,7 +476,7 @@ void izp_convolve1Dsse(float** restrict image, float* restrict vec,
 	__m128 tmp0;
 	__m128 tmp1;
 	__m128 tmp2;
-	 __m128 tmp3;
+	__m128 tmp3;
 
 	__m128 a;
 	__m128 b;
@@ -483,7 +485,7 @@ void izp_convolve1Dsse(float** restrict image, float* restrict vec,
 	__m128 ZOKI;
 	__m128 BOKI;
 
-	for (int i = EXTENSION_BORDER; i < rows + EXTENSION_BORDER; i++) {
+	for (int i = EXTENSION_BORDER; i < rows + EXTENSION_BORDER; ++i) {
 		a = _mm_load_ps(&image[i][EXTENSION_BORDER - 4]);
 		for (int j = EXTENSION_BORDER; j < cols + EXTENSION_BORDER; j = j + 4) {
 
@@ -492,15 +494,18 @@ void izp_convolve1Dsse(float** restrict image, float* restrict vec,
 			c = _mm_load_ps(&image[i][j + 4]);
 
 			tmp0 = _mm_add_ps(_mm_mul_ps(a, vec0_lo), _mm_mul_ps(b, vec0_mi));
-			tmp1 = _mm_add_ps(_mm_add_ps(_mm_mul_ps(a, vec1_lo), _mm_mul_ps(b, vec1_mi)), _mm_mul_ps(c, vec1_hi));
+			tmp1 = _mm_add_ps(
+					_mm_add_ps(_mm_mul_ps(a, vec1_lo), _mm_mul_ps(b, vec1_mi)),
+					_mm_mul_ps(c, vec1_hi));
 			tmp3 = _mm_add_ps(_mm_mul_ps(b, vec3_mi), _mm_mul_ps(c, vec3_hi));
-			tmp2 = _mm_add_ps(_mm_add_ps(_mm_mul_ps(a, vec2_lo), _mm_mul_ps(b, vec2_mi)), _mm_mul_ps(c, vec2_hi));
+			tmp2 = _mm_add_ps(
+					_mm_add_ps(_mm_mul_ps(a, vec2_lo), _mm_mul_ps(b, vec2_mi)),
+					_mm_mul_ps(c, vec2_hi));
 
 			ZOKI = _mm_hadd_ps(_mm_hadd_ps(tmp0, tmp0),
-								_mm_hadd_ps(tmp1, tmp1));
+					_mm_hadd_ps(tmp1, tmp1));
 			BOKI = _mm_hadd_ps(_mm_hadd_ps(tmp2, tmp2),
 					_mm_hadd_ps(tmp3, tmp3));
-
 
 			a = _mm_shuffle_ps(ZOKI, BOKI, 0xCC);
 			_mm_store_ps(&image[i][j], a);
