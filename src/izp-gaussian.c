@@ -158,7 +158,7 @@ int main(int argc, char **argv) {
 #ifdef PROFILE_RDTSC
 	unsigned long long cycles = rdtsc() - start;
 	printf(
-			"Porabil si %lld ciklov na piksel kar je priblizno %f sekund za sliko.\n",
+			"%lld cycles/pixel \t %f seconds/image.\n",
 			cycles / (rows * cols), (float) cycles / (2 * 10E9));
 #endif
 
