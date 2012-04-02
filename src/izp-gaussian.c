@@ -7,7 +7,11 @@
  Description : Gaussian filter
  ============================================================================
  */
-//#define USE_SSE
+
+#ifdef DEBUG
+// fukn debug direktive tuki
+#define USE_SSE
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -76,7 +80,7 @@ int main(int argc, char **argv) {
 		return EXIT_SUCCESS;
 	}
 
-	// open and read image
+	// open image file
 	printf("Opening image: %s\n", argv[1]);
 	FILE *fp = fopen(argv[1], "r");
 
@@ -85,13 +89,15 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
+	// read image
 	image = pgm_readpgm(fp, &cols, &rows, &maxval);
 	printf("Image read! Width: %d Height: %d\n", rows, cols);
 
-	// make extended image
+	// make extended image (SSE alignment, border for convolution)
 	float** extendedImage = izp_extendImage(image, cols, rows, &newCols,
 			&newRows);
 
+	// free old buffer
 	free(image[0]);
 	free(image);
 
@@ -101,38 +107,47 @@ int main(int argc, char **argv) {
 	float **gaussRow = izp_gaussianMatrix(1, FILTER_SIZE, 3.0f);
 #endif
 
-//	izp_printMatrix(gaussRow, 1, FILTER_SIZE);
-
 #ifdef PROFILE_RDTSC
 	unsigned long long start = rdtsc();
 	CALLGRIND_START_INSTRUMENTATION;
 #endif
 
 #ifdef USE_SSE
-
+#ifdef USE_2D
+	printf("Using 2D SSE\n");
+	izp_convolve2Dsse(extendedImage, gauss, cols, rows, FILTER_SIZE);
+#else
 	printf("Using 1D SSE\n");
+
+	// convolve horizontal
 	izp_convolve1Dsse(extendedImage, gaussRow[0], cols, rows, FILTER_SIZE);
 
-	float** transposed = izp_transpose(extendedImage, newCols,
-			newRows);
-
+	// transpose
+	float** transposed = izp_transpose(extendedImage, newCols, newRows);
+	// free old buffers
 	free(extendedImage[0]);
 	free(extendedImage);
+
+	// convolve verticl (use same kernel as image is transposed)
 	izp_convolve1Dsse(transposed, gaussRow[0], rows, cols, FILTER_SIZE);
+
+	// transpose back
 	extendedImage = izp_transpose(transposed, newRows, newCols);
+#endif
 #else
 
 #ifdef USE_2D
-	printf("using 2D non-SSE\n");
+	printf("Using 2D non-SSE\n");
 	izp_convolve2D(extendedImage, gauss, cols, rows, FILTER_SIZE);
 #else
 	printf("Using 1D non-SSE\n");
 	izp_convolve1D(extendedImage, gaussRow[0], cols, rows, FILTER_SIZE);
 
 	float** transposed = izp_transpose(extendedImage, newCols, newRows);
-
+	// free old buffers
 	free(extendedImage[0]);
 	free(extendedImage);
+
 	izp_convolve1D(transposed, gaussRow[0], rows, cols, FILTER_SIZE);
 	extendedImage = izp_transpose(transposed, newRows,
 			newCols);
@@ -146,29 +161,29 @@ int main(int argc, char **argv) {
 	printf("Porabil si %lld ciklov\n", cycles / (rows * cols));
 #endif
 
-//	izp_printMatrix(extendedImage, newCols, newRows);
-
-	unsigned int** uintImage = izp_toUintArray(extendedImage,
-			newCols, newRows);
+	// convert image back to unsigned int
+	unsigned int** uintImage = izp_toUintArray(extendedImage, newCols, newRows);
 
 	// write it
-	FILE *fpOut = fopen("output.pgm", "wb");
+	FILE *fpOut = fopen("output.pgm", "w");
 	if (fpOut != NULL) {
-		pgm_writepgm(fpOut, (gray**) uintImage, newCols,
-				newRows, maxval, 0);
+		pgm_writepgm(fpOut, (gray**) uintImage, newCols, newRows, maxval, 0);
 	}
 
 	free(extendedImage[0]);
 	free(extendedImage);
 
+	free(uintImage[0]);
+	free(uintImage);
+
 	printf("Great success!\n");
 	return EXIT_SUCCESS;
 }
 
-inline void izp_convolve2D(float** restrict image, float** restrict mat, const int cols,
-		const int rows, const int matSize) {
+inline void izp_convolve2D(float** restrict image, float** restrict mat,
+		const int cols, const int rows, const int matSize) {
 
-	register float tmp = 0.0f;
+	float tmp = 0.0f;
 
 	for (int i = EXTENSION_BORDER; i < rows + EXTENSION_BORDER; ++i) {
 		for (int j = EXTENSION_BORDER; j < cols + EXTENSION_BORDER; ++j) {
@@ -236,13 +251,13 @@ inline void izp_convolve2D(float** restrict image, float** restrict mat, const i
 			tmp += image[i + 3][j + 2] * mat[6][5];
 			tmp += image[i + 3][j + 3] * mat[6][6];
 
-			image[i][j] = (unsigned int) tmp;
+			image[i][j] = tmp;
 		}
 	}
 }
 
-void izp_convolve1D(float** restrict image, float* restrict vec, const int cols, const int rows,
-		const int size) {
+void izp_convolve1D(float** restrict image, float* restrict vec, const int cols,
+		const int rows, const int size) {
 
 	register float tmp = 0.0f;
 
@@ -265,8 +280,8 @@ void izp_convolve1D(float** restrict image, float* restrict vec, const int cols,
 }
 
 #ifdef USE_SSE
-void izp_convolve1Dsse(float** restrict image, float* restrict vec, const int cols,
-		const int rows, const int size) {
+void izp_convolve1Dsse(float** restrict image, float* restrict vec,
+		const int cols, const int rows, const int size) {
 
 	float coef[15];
 
@@ -286,37 +301,23 @@ void izp_convolve1Dsse(float** restrict image, float* restrict vec, const int co
 	coef[13] = 0.0f;
 	coef[14] = 0.0f;
 
-//	0.000000 0.106289 0.140321 0.165770
+	const __m128 vec0_lo = _mm_loadu_ps(&coef[3]);
+	const __m128 vec0_mi = _mm_loadu_ps(&coef[7]);
 
-	const register __m128 vec0_lo = _mm_loadu_ps(&coef[3]);
-	const register __m128 vec0_mi = _mm_loadu_ps(&coef[7]);
+	const __m128 vec1_lo = _mm_loadu_ps(&coef[2]);
+	const __m128 vec1_mi = _mm_loadu_ps(&coef[6]);
+	const __m128 vec1_hi = _mm_loadu_ps(&coef[10]);
 
-	printf("Maska za konvolucijo %f %f %f %f %f %f %f %f\n", vec0_lo[0], vec0_lo[1], vec0_lo[2], vec0_lo[3], vec0_mi[0], vec0_mi[1], vec0_mi[2], vec0_mi[3]);
+	const __m128 vec2_lo = _mm_loadu_ps(&coef[1]);
+	const __m128 vec2_mi = _mm_loadu_ps(&coef[5]);
+	const __m128 vec2_hi = _mm_loadu_ps(&coef[9]);
 
-	const register __m128 vec1_lo = _mm_loadu_ps(&coef[2]);
-	const register __m128 vec1_mi = _mm_loadu_ps(&coef[6]);
-	const register __m128 vec1_hi = _mm_loadu_ps(&coef[10]);
-
-	printf("Maska za konvolucijo %f %f %f %f %f %f %f %f %f %f %f %f\n", vec1_lo[0], vec1_lo[1], vec1_lo[2], vec1_lo[3], vec1_mi[0], vec1_mi[1], vec1_mi[2], vec1_mi[3], vec1_hi[0], vec1_hi[1], vec1_hi[2], vec1_hi[3]);
-
-
-	const register __m128 vec2_lo = _mm_loadu_ps(&coef[1]);
-	const register __m128 vec2_mi = _mm_loadu_ps(&coef[5]);
-	const register __m128 vec2_hi = _mm_loadu_ps(&coef[9]);
-
-	printf("Maska za konvolucijo %f %f %f %f %f %f %f %f %f %f %f %f\n", vec2_lo[0], vec2_lo[1], vec2_lo[2], vec2_lo[3], vec2_mi[0], vec2_mi[1], vec2_mi[2], vec2_mi[3], vec2_hi[0], vec2_hi[1], vec2_hi[2], vec2_hi[3]);
-
-
-	const register __m128 vec3_mi = _mm_loadu_ps(&coef[4]);
-	const register __m128 vec3_hi = _mm_loadu_ps(&coef[8]);
-
-	printf("Maska za konvolucijo %f %f %f %f %f %f %f %f\n", vec3_mi[0], vec3_mi[1], vec3_mi[2], vec3_mi[3], vec3_hi[0], vec3_hi[1], vec3_hi[2], vec3_hi[3]);
-
+	const __m128 vec3_mi = _mm_loadu_ps(&coef[4]);
+	const __m128 vec3_hi = _mm_loadu_ps(&coef[8]);
 
 	__m128 x;
 	__m128 y;
 	__m128 z;
-	__m128 tmp;
 
 	__m128 tmp0;
 	__m128 tmp1;
@@ -327,19 +328,13 @@ void izp_convolve1Dsse(float** restrict image, float* restrict vec, const int co
 	__m128 b;
 	__m128 c;
 
-	__m128 acc;
-
 	for (int i = EXTENSION_BORDER; i < rows + EXTENSION_BORDER; i++) {
 		for (int j = EXTENSION_BORDER; j < cols + EXTENSION_BORDER; j = j + 4) {
 
 			// 1st pass with vec0
-
 			a = _mm_load_ps(&image[i][j - 4]);
 			b = _mm_load_ps(&image[i][j]);
 			c = _mm_load_ps(&image[i][j + 4]);
-
-//			printf("%f %f %f %f\n", image[i][j], image[i][j + 1], image[i][j + 2], image[i][j + 3]);
-//			printf("%f %f %f %f\n\n", a[0], a[1], a[2], a[3]);
 
 			x = _mm_mul_ps(a, vec0_lo);
 			y = _mm_mul_ps(b, vec0_mi);
@@ -347,43 +342,35 @@ void izp_convolve1Dsse(float** restrict image, float* restrict vec, const int co
 			tmp0 = _mm_hadd_ps(x, y);
 			tmp0 = _mm_hadd_ps(_mm_hadd_ps(tmp0, tmp0), tmp0);
 			_mm_store_ss(&image[i][j], tmp0);
-//			printf("%f %f %f %f\n\n", tmp[0], tmp[1], tmp[2], tmp[3]);
 			// end of 1st pass
 
 			// 2nd pass
-
 			x = _mm_mul_ps(a, vec1_lo);
 			y = _mm_mul_ps(b, vec1_mi);
 			z = _mm_mul_ps(c, vec1_hi);
 
 			tmp1 = _mm_hadd_ps(_mm_hadd_ps(x, y), z);
 			tmp1 = _mm_hadd_ps(_mm_hadd_ps(tmp1, tmp1), tmp1);
-			_mm_store_ss(&image[i][j+1], tmp1);
-
+			_mm_store_ss(&image[i][j + 1], tmp1);
 			// end of 2nd pass
 
 			// 3rd pass
-
 			x = _mm_mul_ps(a, vec2_lo);
 			y = _mm_mul_ps(b, vec2_mi);
 			z = _mm_mul_ps(c, vec2_hi);
 
 			tmp2 = _mm_hadd_ps(_mm_hadd_ps(x, y), z);
 			tmp2 = _mm_hadd_ps(_mm_hadd_ps(tmp2, tmp2), tmp2);
-
-			_mm_store_ss(&image[i][j+2], tmp2);
-
+			_mm_store_ss(&image[i][j + 2], tmp2);
 			// end of 3rd pass
 
 			// 4th pass
-
 			y = _mm_mul_ps(b, vec3_mi);
 			z = _mm_mul_ps(c, vec3_hi);
 
 			tmp3 = _mm_hadd_ps(y, z);
 			tmp3 = _mm_hadd_ps(_mm_hadd_ps(tmp3, tmp3), tmp3);
-			_mm_store_ss(&image[i][j+3], tmp3);
-
+			_mm_store_ss(&image[i][j + 3], tmp3);
 			// end of 4th pass
 
 		}
@@ -391,8 +378,8 @@ void izp_convolve1Dsse(float** restrict image, float* restrict vec, const int co
 }
 #endif
 
-float** izp_extendImage(unsigned int** restrict image, const int cols, const int rows,
-		int *newCols, int *newRows) {
+float** izp_extendImage(unsigned int** restrict image, const int cols,
+		const int rows, int *newCols, int *newRows) {
 
 	*newCols = cols + EXTENSION_BORDER + EXTENSION_BORDER;
 	*newRows = rows + EXTENSION_BORDER + EXTENSION_BORDER;
@@ -442,7 +429,8 @@ float** izp_transpose(float** restrict image, const int cols, const int rows) {
 	return extImage;
 }
 
-unsigned int** izp_toUintArray(float** restrict image, const int cols, const int rows) {
+unsigned int** izp_toUintArray(float** restrict image, const int cols,
+		const int rows) {
 
 	// allocate big cosy array :D
 	unsigned int **extImage = (unsigned int **) izp_allocarray(cols, rows,

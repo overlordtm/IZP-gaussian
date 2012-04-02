@@ -36,7 +36,9 @@
 								<option id="gnu.c.compiler.option.debugging.other.1217768529" name="Other debugging flags" superClass="gnu.c.compiler.option.debugging.other" value="-da -Q" valueType="string"/>
 								<option id="gnu.c.compiler.option.misc.verbose.1194001565" name="Verbose (-v)" superClass="gnu.c.compiler.option.misc.verbose" value="true" valueType="boolean"/>
 								<option id="gnu.c.compiler.option.optimization.flags.377174022" name="Other optimization flags" superClass="gnu.c.compiler.option.optimization.flags" value="-msse3" valueType="string"/>
-								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1621612251" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols"/>
+								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1621612251" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="DEBUG"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1824685536" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool command="gcc" commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.GLDErrorParser" id="cdt.managedbuild.tool.gnu.c.linker.exe.debug.714416923" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.exe.debug">
