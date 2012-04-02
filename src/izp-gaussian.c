@@ -471,14 +471,10 @@ void izp_convolve1Dsse(float** restrict image, float* restrict vec,
 	const __m128 vec3_mi = _mm_loadu_ps(&coef[4]);
 	const __m128 vec3_hi = _mm_loadu_ps(&coef[8]);
 
-	__m128 x;
-	__m128 y;
-	__m128 z;
-
 	__m128 tmp0;
 	__m128 tmp1;
 	__m128 tmp2;
-	__m128 tmp3;
+	 __m128 tmp3;
 
 	__m128 a;
 	__m128 b;
@@ -488,46 +484,26 @@ void izp_convolve1Dsse(float** restrict image, float* restrict vec,
 	__m128 BOKI;
 
 	for (int i = EXTENSION_BORDER; i < rows + EXTENSION_BORDER; i++) {
+		a = _mm_load_ps(&image[i][EXTENSION_BORDER - 4]);
 		for (int j = EXTENSION_BORDER; j < cols + EXTENSION_BORDER; j = j + 4) {
 
 			// 1st pass with vec0
-			a = _mm_load_ps(&image[i][j - 4]);
 			b = _mm_load_ps(&image[i][j]);
 			c = _mm_load_ps(&image[i][j + 4]);
 
-			x = _mm_mul_ps(a, vec0_lo);
-			y = _mm_mul_ps(b, vec0_mi);
+			tmp0 = _mm_add_ps(_mm_mul_ps(a, vec0_lo), _mm_mul_ps(b, vec0_mi));
+			tmp1 = _mm_add_ps(_mm_add_ps(_mm_mul_ps(a, vec1_lo), _mm_mul_ps(b, vec1_mi)), _mm_mul_ps(c, vec1_hi));
+			tmp3 = _mm_add_ps(_mm_mul_ps(b, vec3_mi), _mm_mul_ps(c, vec3_hi));
+			tmp2 = _mm_add_ps(_mm_add_ps(_mm_mul_ps(a, vec2_lo), _mm_mul_ps(b, vec2_mi)), _mm_mul_ps(c, vec2_hi));
 
-			tmp0 = _mm_hadd_ps(x, y);
-			// end of 1st pass
-
-			// 2nd pass
-			x = _mm_mul_ps(a, vec1_lo);
-			y = _mm_mul_ps(b, vec1_mi);
-			z = _mm_mul_ps(c, vec1_hi);
-
-			tmp1 = _mm_hadd_ps(_mm_hadd_ps(x, y), z);
 			ZOKI = _mm_hadd_ps(_mm_hadd_ps(tmp0, tmp0),
-					_mm_hadd_ps(tmp1, tmp1));
-			// end of 2nd pass
-
-			// 3rd pass
-			x = _mm_mul_ps(a, vec2_lo);
-			y = _mm_mul_ps(b, vec2_mi);
-			z = _mm_mul_ps(c, vec2_hi);
-
-			tmp2 = _mm_hadd_ps(_mm_hadd_ps(x, y), z);
-			// end of 3rd pass
-
-			// 4th pass
-			y = _mm_mul_ps(b, vec3_mi);
-			z = _mm_mul_ps(c, vec3_hi);
-
-			tmp3 = _mm_hadd_ps(y, z);
+								_mm_hadd_ps(tmp1, tmp1));
 			BOKI = _mm_hadd_ps(_mm_hadd_ps(tmp2, tmp2),
 					_mm_hadd_ps(tmp3, tmp3));
-			// end of 4th pass
-			_mm_store_ps(&image[i][j], _mm_shuffle_ps(ZOKI, BOKI, 0xCC));
+
+
+			a = _mm_shuffle_ps(ZOKI, BOKI, 0xCC);
+			_mm_store_ps(&image[i][j], a);
 
 		}
 	}
