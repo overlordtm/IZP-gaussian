@@ -109,7 +109,6 @@ int main(int argc, char **argv) {
 
 #ifdef PROFILE_RDTSC
 	unsigned long long start = rdtsc();
-	CALLGRIND_START_INSTRUMENTATION;
 #endif
 
 #ifdef USE_SSE
@@ -155,10 +154,8 @@ int main(int argc, char **argv) {
 #endif
 
 #ifdef PROFILE_RDTSC
-	CALLGRIND_STOP_INSTRUMENTATION;
-	CALLGRIND_DUMP_STATS;
 	unsigned long long cycles = rdtsc() - start;
-	printf("Porabil si %lld ciklov\n", cycles / (rows * cols));
+	printf("Porabil si %lld ciklov na piksel kar je priblizno %f sekund za sliko.\n", cycles / (rows * cols), (float)cycles/(2*10E9));
 #endif
 
 	// convert image back to unsigned int
@@ -343,9 +340,6 @@ void izp_convolve1Dsse(float** restrict image, float* restrict vec,
 			y = _mm_mul_ps(b, vec0_mi);
 
 			tmp0 = _mm_hadd_ps(x, y);
-
-//			tmp0 = _mm_hadd_ps(_mm_hadd_ps(tmp0, tmp0), tmp0);
-//			_mm_store_ss(&image[i][j], tmp0);
 			// end of 1st pass
 
 			// 2nd pass
@@ -354,12 +348,7 @@ void izp_convolve1Dsse(float** restrict image, float* restrict vec,
 			z = _mm_mul_ps(c, vec1_hi);
 
 			tmp1 = _mm_hadd_ps(_mm_hadd_ps(x, y), z);
-
-			// ZOKI[0] and ZOKI[1] is value for image[i][j]
-			// ZOKI[2] and ZOKI[3] is value for image[i][j+1]
 			ZOKI = _mm_hadd_ps(_mm_hadd_ps(tmp0, tmp0), _mm_hadd_ps(tmp1, tmp1));
-//			tmp1 = _mm_hadd_ps(_mm_hadd_ps(tmp1, tmp1), tmp1);
-//			_mm_store_ss(&image[i][j + 1], tmp1);
 			// end of 2nd pass
 
 			// 3rd pass
@@ -368,8 +357,6 @@ void izp_convolve1Dsse(float** restrict image, float* restrict vec,
 			z = _mm_mul_ps(c, vec2_hi);
 
 			tmp2 = _mm_hadd_ps(_mm_hadd_ps(x, y), z);
-//			tmp2 = _mm_hadd_ps(_mm_hadd_ps(tmp2, tmp2), tmp2);
-//			_mm_store_ss(&image[i][j + 2], tmp2);
 			// end of 3rd pass
 
 			// 4th pass
@@ -377,12 +364,9 @@ void izp_convolve1Dsse(float** restrict image, float* restrict vec,
 			z = _mm_mul_ps(c, vec3_hi);
 
 			tmp3 = _mm_hadd_ps(y, z);
-//			tmp3 = _mm_hadd_ps(_mm_hadd_ps(tmp3, tmp3), tmp3);
-//			_mm_store_ss(&image[i][j + 3], tmp3);
 			BOKI = _mm_hadd_ps(_mm_hadd_ps(tmp2, tmp2), _mm_hadd_ps(tmp3, tmp3));
-
-			_mm_store_ps(&image[i][j], _mm_shuffle_ps(ZOKI, BOKI, 0xCC));
 			// end of 4th pass
+			_mm_store_ps(&image[i][j], _mm_shuffle_ps(ZOKI, BOKI, 0xCC));
 
 		}
 	}
@@ -411,8 +395,6 @@ float** izp_extendImage(unsigned int** restrict image, const int cols,
 
 	// copy centred
 	for (int i = 0; i < rows; ++i) {
-//		memcpy(&(extImage[i + EXTENSION_BORDER][EXTENSION_BORDER]),
-//				&(image[i][0]), cols * sizeof(unsigned int));
 		for (int j = 0; j < cols; ++j) {
 			extImage[i + EXTENSION_BORDER][j + EXTENSION_BORDER] =
 					(float) image[i][j];
@@ -426,9 +408,6 @@ float** izp_transpose(float** restrict image, const int cols, const int rows) {
 
 	// allocate big cosy array :D
 	float **extImage = (float **) izp_allocarray(rows, cols, sizeof(float));
-
-	// make it grey
-	memset(extImage[0], 0, rows * cols * sizeof(float));
 
 // copy centred
 	for (int i = 0; i < rows; ++i) {
@@ -501,17 +480,6 @@ float ** izp_gaussianMatrix(const int n, const int m, const float sigma) {
 
 	return g;
 }
-//float ** izp_gaussianMatrix(const int n, const int m, const float sigma) {
-//	float ** g = (float **) izp_allocarray(m, n, sizeof(float));
-//	g[0][0] = 0.106289f;
-//	g[0][1] = 0.140321f;
-//	g[0][2] = 0.165770f;
-//	g[0][3] = 0.175240f;
-//	g[0][4] = 0.165770f;
-//	g[0][5] = 0.140321f;
-//	g[0][6] = 0.106289f;
-//	return g;
-//}
 
 void izp_printMatrix(float** mat, const int n, const int m) {
 	for (int i = 0; i < n; i++) {
@@ -522,7 +490,7 @@ void izp_printMatrix(float** mat, const int n, const int m) {
 	}
 }
 
-static __inline__ unsigned long long rdtsc(void) {
+static inline unsigned long long rdtsc(void) {
 	unsigned hi, lo;
 	__asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
 	return ((unsigned long long) lo) | (((unsigned long long) hi) << 32);
