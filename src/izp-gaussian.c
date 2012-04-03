@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
 #ifdef PROFILE_RDTSC
 	unsigned long long cycles = rdtsc() - start;
 	printf("%lld cycles/pixel \t %f seconds/image.\n", cycles / (rows * cols),
-			(float) cycles / (2 * 10E9));
+			(float) cycles / (2 * 1E9));
 #endif
 
 	// convert image back to unsigned int
@@ -322,6 +322,8 @@ inline void izp_convolve2Dsse(float** restrict image, float** restrict mat,
 	float x;
 	float tmp[4];
 
+	__m128 zoki;
+
 	for (int i = EXTENSION_BORDER; i < rows + EXTENSION_BORDER; ++i) {
 		for (int j = EXTENSION_BORDER; j < cols + EXTENSION_BORDER; j = j+1) {
 
@@ -331,108 +333,53 @@ inline void izp_convolve2Dsse(float** restrict image, float** restrict mat,
 			__m128 a = _mm_loadu_ps(&image[i - 3][j - 4]);
 			__m128 b = _mm_loadu_ps(&image[i - 3][j]);
 
-			_mm_store_ps(&tmp[0], _mm_mul_ps(a, m00));
-			x += tmp[0];
-			x += tmp[1];
-			x += tmp[2];
-			x += tmp[3];
-			_mm_store_ps(&tmp[0], _mm_mul_ps(b, m01));
-			x += tmp[0];
-			x += tmp[1];
-			x += tmp[2];
-			x += tmp[3];
+			zoki = _mm_add_ps(_mm_mul_ps(b, m01), _mm_mul_ps(a, m00));
 
 			// 2nd row
 			__m128 c = _mm_loadu_ps(&image[i - 2][j - 4]);
 			__m128 d = _mm_loadu_ps(&image[i - 2][j]);
 
-			_mm_store_ps(&tmp[0], _mm_mul_ps(c, m10));
-			x += tmp[0];
-			x += tmp[1];
-			x += tmp[2];
-			x += tmp[3];
-			_mm_store_ps(&tmp[0], _mm_mul_ps(d, m11));
-			x += tmp[0];
-			x += tmp[1];
-			x += tmp[2];
-			x += tmp[3];
+			zoki = _mm_add_ps(zoki, _mm_mul_ps(c, m10));
+			zoki = _mm_add_ps(zoki, _mm_mul_ps(d, m11));
+
 
 			// 3rd row
 			__m128 e = _mm_loadu_ps(&image[i - 1][j - 4]);
 			__m128 f = _mm_loadu_ps(&image[i - 1][j]);
 
-			_mm_store_ps(&tmp[0], _mm_mul_ps(e, m20));
-			x += tmp[0];
-			x += tmp[1];
-			x += tmp[2];
-			x += tmp[3];
-			_mm_store_ps(&tmp[0], _mm_mul_ps(f, m21));
-			x += tmp[0];
-			x += tmp[1];
-			x += tmp[2];
-			x += tmp[3];
-
+			_mm_add_ps(zoki, _mm_mul_ps(e, m20));
+			_mm_add_ps(zoki, _mm_mul_ps(f, m21));
 			// 4th row
+
 			__m128 g = _mm_loadu_ps(&image[i][j - 4]);
 			__m128 h = _mm_loadu_ps(&image[i][j]);
 
-			_mm_store_ps(&tmp[0], _mm_mul_ps(g, m30));
-			x += tmp[0];
-			x += tmp[1];
-			x += tmp[2];
-			x += tmp[3];
-			_mm_store_ps(&tmp[0], _mm_mul_ps(h, m31));
-			x += tmp[0];
-			x += tmp[1];
-			x += tmp[2];
-			x += tmp[3];
+			zoki = _mm_add_ps(zoki, _mm_mul_ps(g, m30));
+			zoki = _mm_add_ps(zoki, _mm_mul_ps(h, m31));
 
 			// 5th row
 			__m128 ii = _mm_loadu_ps(&image[i + 1][j - 4]);
 			__m128 jj = _mm_loadu_ps(&image[i + 1][j]);
 
-			_mm_store_ps(&tmp[0], _mm_mul_ps(ii, m40));
-			x += tmp[0];
-			x += tmp[1];
-			x += tmp[2];
-			x += tmp[3];
-			_mm_store_ps(&tmp[0], _mm_mul_ps(jj, m41));
-			x += tmp[0];
-			x += tmp[1];
-			x += tmp[2];
-			x += tmp[3];
+			zoki = _mm_add_ps(zoki, _mm_mul_ps(ii, m40));
+			zoki = _mm_add_ps(zoki, _mm_mul_ps(jj, m41));
 
 			// 6th row
 			__m128 k = _mm_loadu_ps(&image[i + 2][j - 4]);
 			__m128 l = _mm_loadu_ps(&image[i + 2][j]);
 
-			_mm_store_ps(&tmp[0], _mm_mul_ps(k, m50));
-			x += tmp[0];
-			x += tmp[1];
-			x += tmp[2];
-			x += tmp[3];
-			_mm_store_ps(&tmp[0], _mm_mul_ps(l, m51));
-			x += tmp[0];
-			x += tmp[1];
-			x += tmp[2];
-			x += tmp[3];
+			zoki = _mm_add_ps(zoki, _mm_mul_ps(k, m50));
+			zoki = _mm_add_ps(zoki, _mm_mul_ps(l, m51));
 
 			// 7th row
 			__m128 mm = _mm_loadu_ps(&image[i + 3][j - 4]);
 			__m128 nn = _mm_loadu_ps(&image[i + 3][j]);
 
-			_mm_store_ps(&tmp[0], _mm_mul_ps(mm, m60));
-			x += tmp[0];
-			x += tmp[1];
-			x += tmp[2];
-			x += tmp[3];
-			_mm_store_ps(&tmp[0], _mm_mul_ps(nn, m61));
-			x += tmp[0];
-			x += tmp[1];
-			x += tmp[2];
-			x += tmp[3];
+			zoki = _mm_add_ps(zoki, _mm_mul_ps(mm, m60));
+			zoki = _mm_add_ps(zoki, _mm_mul_ps(nn, m61));
 
-			image[i][j] = x;
+			_mm_store_ss((float*)&image[i][j], _mm_hadd_ps(zoki, zoki));
+
 
 		}
 	}

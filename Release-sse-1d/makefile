@@ -23,19 +23,19 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: izp-gaussian
+all: IZP-gaussian
 
 # Tool invocations
-izp-gaussian: $(OBJS) $(USER_OBJS)
+IZP-gaussian: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc  -o "izp-gaussian" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc  -o "IZP-gaussian" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(OBJS)$(C_DEPS)$(EXECUTABLES) izp-gaussian
+	-$(RM) $(OBJS)$(C_DEPS)$(EXECUTABLES) IZP-gaussian
 	-@echo ' '
 
 .PHONY: all clean dependents
