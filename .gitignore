@@ -1,2 +1,9 @@
 output.pgm
 gmon.out
+Release/
+Debug/
+Release-1d/
+Release-2d/
+Release-sse-1d/
+Release-sse-2d/
+
